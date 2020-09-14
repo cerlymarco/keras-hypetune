@@ -47,7 +47,7 @@ param_grid = {
 }
 
 kgs = KerasGridSearch(get_model, param_grid, monitor='val_loss', greater_is_better=False)
-kgs.search(x_train, y_valid, validation_data=(x_valid, y_valid))
+kgs.search(x_train, y_train, validation_data=(x_valid, y_valid))
 ```
 
 ### KerasRandomSearch
@@ -68,7 +68,7 @@ param_grid = {
 
 krs = KerasRandomSearch(get_model, param_grid, monitor='val_loss', greater_is_better=False, 
                         n_iter=15, sampling_seed=33)
-krs.search(x_train, y_valid, validation_data=(x_valid, y_valid))
+krs.search(x_train, y_train, validation_data=(x_valid, y_valid))
 ```
 
 ## Cross Validation
