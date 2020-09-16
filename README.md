@@ -117,7 +117,3 @@ krs = KerasRandomSearchCV(get_model, param_grid, cv=cv, monitor='val_loss', grea
                           n_iter=15, sampling_seed=33)
 krs.search(X, y)
 ```
-
-## Media
-
-Used in:
