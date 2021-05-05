@@ -118,7 +118,7 @@ class _KerasSearch:
             param['epochs'] = epoch + 1
             param['steps_per_epoch'] = model.history.params['steps']
             param['batch_size'] = (all_fitargs['batch_size'] if 'batch_size'
-                                                                in all_fitargs else None)
+                                   in all_fitargs else None)
             score = round(model.history.history[self.monitor][epoch], 5)
             evaluate = eval_score([self.best_score, score])
 
@@ -226,6 +226,7 @@ class KerasGridSearch(_KerasSearch):
                  store_model=True,
                  savepath=None,
                  tuner_verbose=1):
+      
         self.hypermodel = hypermodel
         self.param_grid = param_grid
         self.monitor = monitor
@@ -380,6 +381,7 @@ class KerasRandomSearch(_KerasSearch):
                  store_model=True,
                  savepath=None,
                  tuner_verbose=1):
+      
         self.hypermodel = hypermodel
         self.param_grid = param_grid
         self.n_iter = n_iter
@@ -652,6 +654,7 @@ class KerasGridSearchCV(_KerasSearchCV):
                  store_model=True,
                  savepath=None,
                  tuner_verbose=1):
+      
         self.hypermodel = hypermodel
         self.param_grid = param_grid
         self.cv = cv
@@ -828,6 +831,7 @@ class KerasRandomSearchCV(_KerasSearchCV):
                  store_model=True,
                  savepath=None,
                  tuner_verbose=1):
+      
         self.hypermodel = hypermodel
         self.param_grid = param_grid
         self.cv = cv
