@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 HERE = pathlib.Path(__file__).parent
 
-VERSION = '0.1.1'
+VERSION = '0.1.2'
 PACKAGE_NAME = 'keras-hypetune'
 AUTHOR = 'Marco Cerliani'
 AUTHOR_EMAIL = 'cerlymarco@gmail.com'
@@ -28,5 +28,6 @@ setup(name=PACKAGE_NAME,
       author_email=AUTHOR_EMAIL,
       url=URL,
       install_requires=INSTALL_REQUIRES,
+      python_requires='>=3',
       packages=find_packages()
       )

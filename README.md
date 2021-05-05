@@ -18,7 +18,7 @@ def get_model(param):
     return model
 ```
 
-The optimization process is easily trackable using the callbacks provided by Keras. At the end of the procedure, you can access to all you need querying the keras-hypetune searcher. The best solutions can be automatically saved in proper locations.
+The optimization process is easily trackable using the callbacks provided by Keras. At the end of the searching, you can access all you need by querying the keras-hypetune searcher. The best solutions can be automatically saved in proper locations.
 
 ## Installation
 
