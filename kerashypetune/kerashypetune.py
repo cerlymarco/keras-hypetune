@@ -1,9 +1,10 @@
 import random
+import inspect
 import numpy as np
 from copy import deepcopy
 
 from .utils import (ParameterSampler, _check_param, _check_data,
-                    _clear_callbacks, _create_fold)
+                    _clear_callbacks, _create_fold, _is_multioutput)
 
 
 class _KerasSearch:
@@ -497,12 +498,25 @@ class _KerasSearchCV:
                 "Expected cv as cross-validation object with split method to "
                 "generate indices to split data into training and test set "
                 "(like from sklearn.model_selection).")
+        else:
+            split_args = inspect.signature(self.cv.split).parameters
+            split_args = {k: v.default for k, v in split_args.items()}
+            split_need_y = split_args['y'] is not None
 
-        _check_data(x)
-        if y is not None: _check_data(y)
-        if sample_weight is not None: _check_data(sample_weight)
+        _x = _check_data(x)
 
-        for fold, (train_id, val_id) in enumerate(self.cv.split(x, y, groups)):
+        if y is not None:
+            _y = _check_data(y, is_target=True)
+            if _is_multioutput(y) and split_need_y:
+                raise ValueError(
+                    "{} not supports multioutput.".format(self.cv))
+        else:
+            _y = None
+
+        if sample_weight is not None:
+            _ = _check_data(sample_weight)
+
+        for fold, (train_id, val_id) in enumerate(self.cv.split(_x, _y, groups)):
 
             if self.tuner_verbose > 0:
                 print("\n{}\n{}  Fold {}  {}\n{}".format(

@@ -13,8 +13,10 @@ def _check_param(values):
 
     if isinstance(values, (list, tuple, np.ndarray)):
         return list(set(values))
+
     elif hasattr(values, 'rvs'):
         return values
+
     else:
         return [values]
 
@@ -44,7 +46,7 @@ def _create_fold(X, ids):
 
     Returns
     -------
-    array/list or arrays/dict of arrays containing fold data.
+    Data fold.
     """
 
     if isinstance(X, list):
@@ -57,30 +59,61 @@ def _create_fold(X, ids):
         return X[ids]
 
 
-def _check_data(X):
+def _check_data(X, is_target=False):
     """Data controls for cross validation."""
 
     if isinstance(X, list):
+        data_len = []
         for x in X:
             if not isinstance(x, np.ndarray):
                 raise ValueError(
                     "Received data in list format. Take care to cast each "
                     "value of the list to numpy array.")
+            data_len.append(len(x))
+
+        if len(set(data_len)) > 1:
+            raise ValueError("Data must have the same cardinality. "
+                             "Got {}".format(data_len))
 
     elif isinstance(X, dict):
+        data_len = []
         for x in X.values():
             if not isinstance(x, np.ndarray):
                 raise ValueError(
                     "Received data in dict format. Take care to cast each "
                     "value of the dict to numpy array.")
+            data_len.append(len(x))
+
+        if len(set(data_len)) > 1:
+            raise ValueError("Data must have the same cardinality. "
+                             "Got {}".format(data_len))
 
     elif isinstance(X, np.ndarray):
-        pass
+        x = X
+        data_len = [len(x)]
 
     else:
         raise ValueError(
             "Data format not appropriate for Keras CV search. "
             "Supported types are list, dict or numpy array.")
+
+    if not is_target:
+        x = np.zeros(data_len[0])
+
+    return x
+
+
+def _is_multioutput(y):
+    """Check if multioutput task."""
+
+    if isinstance(y, list):
+        return len(y) > 1
+
+    elif isinstance(y, dict):
+        return len(y) > 1
+
+    else:
+        return False
 
 
 class ParameterSampler(object):
