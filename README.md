@@ -23,7 +23,7 @@ The optimization process is easily trackable using the callbacks provided by Ker
 ## Installation
 
 ```shell
-pip install keras-hypetune
+pip install --upgrade keras-hypetune
 ```
 
 Tensorflow and Keras are not needed requirements. keras-hypetune is specifically for tf.keras with TensorFlow 2.0. The usage of GPU is normally available.
