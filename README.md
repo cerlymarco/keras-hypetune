@@ -1,5 +1,5 @@
 # keras-hypetune
-A friendly python package for Keras Hyperparameters Tuning based only on NumPy.
+A friendly python package for Keras Hyperparameters Tuning based only on NumPy and Hyperopt.
 
 ## Overview
 
@@ -71,6 +71,27 @@ krs = KerasRandomSearch(get_model, param_grid, monitor='val_loss', greater_is_be
 krs.search(x_train, y_train, validation_data=(x_valid, y_valid))
 ```
 
+### KerasBayesianSearch
+
+The parameter values are chosen according to bayesian optimization algorithms based on gaussian processes and regression trees (from hyperopt).
+
+The number of parameter combinations that are tried is given by n_iter. Parameters must be given as hyperopt distributions.
+
+```python
+param_grid = {
+    'unit_1': 64 + hp.randint('unit_1', 64),
+    'unit_2': 32 + hp.randint('unit_2', 96),
+    'lr': hp.loguniform('lr', np.log(0.001), np.log(0.02)), 
+    'activ': hp.choice('activ', ['elu','relu']),
+    'epochs': 100, 
+    'batch_size': 512
+}
+
+kbs = KerasBayesianSearch(get_model, param_grid, monitor='val_loss', greater_is_better=False, 
+                          n_iter=15, sampling_seed=33)
+kbs.search(x_train, y_train, trials=Trials(), validation_data=(x_valid, y_valid))
+```
+
 ## Cross Validation
 
 This tuning modality operates the optimization using a cross-validation approach. The CV strategies available are the same provided by scikit-learn splitter classes. The parameter combinations are evaluated on the mean score of the folds. In this case, it's allowed the usage of only numpy array data. For tasks involving multi-input/output, the arrays can be wrapped into list or dict like in normal Keras.
@@ -116,4 +137,27 @@ cv = KFold(n_splits=3, random_state=33, shuffle=True)
 krs = KerasRandomSearchCV(get_model, param_grid, cv=cv, monitor='val_loss', greater_is_better=False,
                           n_iter=15, sampling_seed=33)
 krs.search(X, y)
+```
+
+### KerasBayesianSearchCV
+
+The parameter values are chosen according to bayesian optimization algorithms based on gaussian processes and regression trees (from hyperopt).
+
+The number of parameter combinations that are tried is given by n_iter. Parameters must be given as hyperopt distributions.
+
+```python
+param_grid = {
+    'unit_1': 64 + hp.randint('unit_1', 64),
+    'unit_2': 32 + hp.randint('unit_2', 96),
+    'lr': hp.loguniform('lr', np.log(0.001), np.log(0.02)), 
+    'activ': hp.choice('activ', ['elu','relu']),
+    'epochs': 100, 
+    'batch_size': 512
+}
+
+cv = KFold(n_splits=3, random_state=33, shuffle=True)
+
+kbs = KerasBayesianSearchCV(get_model, param_grid, cv=cv, monitor='val_loss', greater_is_better=False,
+                            n_iter=15, sampling_seed=33)
+kbs.search(X, y, trials=Trials())
 ```

@@ -13,10 +13,10 @@ def _check_param(values):
 
     if isinstance(values, (list, tuple, np.ndarray)):
         return list(set(values))
-
-    elif hasattr(values, 'rvs'):
+    elif 'scipy' in str(type(values)).lower():
         return values
-
+    elif 'hyperopt' in str(type(values)).lower():
+        return values
     else:
         return [values]
 
@@ -73,7 +73,7 @@ def _check_data(X, is_target=False):
 
         if len(set(data_len)) > 1:
             raise ValueError("Data must have the same cardinality. "
-                             "Got {}".format(data_len))
+                             "Got {}.".format(data_len))
 
     elif isinstance(X, dict):
         data_len = []
@@ -86,7 +86,7 @@ def _check_data(X, is_target=False):
 
         if len(set(data_len)) > 1:
             raise ValueError("Data must have the same cardinality. "
-                             "Got {}".format(data_len))
+                             "Got {}.".format(data_len))
 
     elif isinstance(X, np.ndarray):
         x = X
@@ -117,12 +117,11 @@ def _is_multioutput(y):
 
 
 class ParameterSampler(object):
-    # modified from scikit-learn ParameterSampler
     """Generator on parameters sampled from given distributions.
-    Non-deterministic iterable over random candidate combinations for hyper-
-    parameter search. If all parameters are presented as a list,
-    sampling without replacement is performed. If at least one parameter
-    is given as a distribution, sampling with replacement is used.
+    If all parameters are presented as a list, sampling without replacement is
+    performed. If at least one parameter is given as a scipy distribution,
+    sampling with replacement is used. If all parameters are given as hyperopt
+    distributions Tree of Parzen Estimators searching from hyperopt is computed.
     It is highly recommended to use continuous distributions for continuous
     parameters.
 
@@ -131,79 +130,98 @@ class ParameterSampler(object):
     param_distributions : dict
         Dictionary with parameters names (`str`) as keys and distributions
         or lists of parameters to try. Distributions must provide a ``rvs``
-        method for sampling (such as those from scipy.stats.distributions).
+        method for random sampling (such as those from scipy.stats.distributions)
+        or be hyperopt distributions for bayesian searching.
         If a list is given, it is sampled uniformly.
-        If a list of dicts is given, first a dict is sampled uniformly, and
-        then a parameter is sampled using that dict as above.
 
-    n_iter : integer, default None
-        Number of parameter settings that are produced.
+    n_iter : integer, default=None
+        Number of parameter configurations that are produced.
 
-    random_state : int, default None
+    random_state : int, default=None
         Pass an int for reproducible output across multiple
         function calls.
 
-    is_random: bool, default True
-        If it's a random search.
-
     Returns
     -------
-    param_combi : list of tuple
-        list of sampled parameter combination
+    param_combi : list of dicts or dict of hyperopt distributions
+        Parameter combinations.
+
+    searching_type : str
+        The searching algorithm used.
     """
 
-    def __init__(self, param_distributions, n_iter=None,
-                 random_state=None, is_random=False):
+    def __init__(self, param_distributions, n_iter=None, random_state=None):
 
         self.n_iter = n_iter
         self.random_state = random_state
         self.param_distributions = param_distributions
-        self.is_random = is_random
 
     def sample(self):
+        """Generator parameter combinations from given distributions."""
 
         param_distributions = self.param_distributions.copy()
 
-        all_lists = all(not hasattr(p, "rvs")
+        is_grid = all(isinstance(p, list)
+                      for p in param_distributions.values())
+        is_random = all(isinstance(p, list) or 'scipy' in str(type(p)).lower()
                         for p in param_distributions.values())
+        is_hyperopt = all('hyperopt' in str(type(p)).lower()
+                          or (len(p) < 2 if isinstance(p, list) else False)
+                          for p in param_distributions.values())
 
-        seed = (random.randint(1, 100) if self.random_state is None
-                else self.random_state + 1)
-        random.seed(seed)
-
-        if all_lists:
+        if is_grid:
             param_combi = list(product(*param_distributions.values()))
+            param_combi = [
+                dict(zip(param_distributions.keys(), combi))
+                for combi in param_combi
+            ]
+            return param_combi, 'grid'
 
-            if self.is_random:
-                grid_size = len(param_combi)
-                if grid_size < self.n_iter:
-                    raise ValueError(
-                        "The total space of parameters {} is smaller "
-                        "than n_iter={}. Try with KerasGridSearch.".format(
-                            grid_size, self.n_iter))
-                param_combi = random.sample(param_combi, self.n_iter)
-
-        else:
-
+        elif is_random:
             if self.n_iter is None:
                 raise ValueError(
-                    "n_iter must be an integer >0 when parameter "
-                    "distributions are provided. Get None.")
+                    "n_iter must be an integer >0 when scipy parameter "
+                    "distributions are provided. Get None."
+                )
+
+            seed = (random.randint(1, 100) if self.random_state is None
+                    else self.random_state + 1)
+            random.seed(seed)
 
             param_combi = []
             k = self.n_iter
             for i in range(self.n_iter):
                 dist = param_distributions.copy()
-                params = []
+                combi = []
                 for j, v in enumerate(dist.values()):
-                    if hasattr(v, "rvs"):
-                        params.append(v.rvs(random_state=seed * (k + j)))
+                    if 'scipy' in str(type(v)).lower():
+                        combi.append(v.rvs(random_state=seed * (k + j)))
                     else:
-                        params.append(v[random.randint(0, len(v) - 1)])
+                        combi.append(v[random.randint(0, len(v) - 1)])
                     k += i + j
-                param_combi.append(tuple(params))
+                param_combi.append(
+                    dict(zip(param_distributions.keys(), combi))
+                )
+            np.random.mtrand._rand
 
-        # reset seed
-        np.random.mtrand._rand
+            return param_combi, 'random'
 
-        return param_combi
+        elif is_hyperopt:
+            if self.n_iter is None:
+                raise ValueError(
+                    "n_iter must be an integer >0 when hyperopt "
+                    "search spaces are provided. Get None."
+                )
+            param_distributions = {
+                k: p[0] if isinstance(p, list) else p
+                for k, p in param_distributions.items()
+            }
+
+            return param_distributions, 'hyperopt'
+
+        else:
+            raise ValueError(
+                "Parameters not recognized. "
+                "Pass lists, scipy distributions (also in conjunction "
+                "with lists), or hyperopt search spaces."
+            )

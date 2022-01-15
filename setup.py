@@ -3,19 +3,20 @@ from setuptools import setup, find_packages
 
 HERE = pathlib.Path(__file__).parent
 
-VERSION = '0.1.3'
+VERSION = '0.2.0'
 PACKAGE_NAME = 'keras-hypetune'
 AUTHOR = 'Marco Cerliani'
 AUTHOR_EMAIL = 'cerlymarco@gmail.com'
 URL = 'https://github.com/cerlymarco/keras-hypetune'
 
 LICENSE = 'MIT'
-DESCRIPTION = 'A friendly python package for Keras Hyperparameters Tuning based only on NumPy.'
+DESCRIPTION = 'A friendly python package for Keras Hyperparameters Tuning based only on NumPy and Hyperopt.'
 LONG_DESCRIPTION = (HERE / "README.md").read_text()
 LONG_DESC_TYPE = "text/markdown"
 
 INSTALL_REQUIRES = [
-      'numpy'
+      'numpy',
+      'hyperopt==0.2.5'
 ]
 
 setup(name=PACKAGE_NAME,
