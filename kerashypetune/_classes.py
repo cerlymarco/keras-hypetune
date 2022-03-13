@@ -340,7 +340,7 @@ class _KerasSearchCV:
             list(self.folds_scores.values()), axis=0).round(5)
         evaluate = eval_score(mean_score_params)
 
-        self.best_params = [list(f)[evaluate] for f in self.folds_trials.values()]
+        self.best_params = list(self.folds_trials.values())[0][evaluate]
         self.best_params_score = mean_score_params[evaluate]
 
         return self
